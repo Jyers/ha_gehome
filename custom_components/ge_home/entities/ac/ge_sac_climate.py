@@ -21,20 +21,26 @@ class SacHvacModeOptionsConverter(OptionsConverter):
         if self._available_modes and self._available_modes.has_heat:
             modes.append(HVACMode.HEAT)
             modes.append(HVACMode.AUTO)
+        elif self._available_modes and self._available_modes.has_energy_saver:
+            modes.append(HVACMode.AUTO)
         if self._available_modes and self._available_modes.has_dry:
             modes.append(HVACMode.DRY)
         return [i.value for i in modes]
     
     def from_option_string(self, value: str) -> Any:
         try:
-            hvac = HVACMode(value.lower())    
-            return {
-                HVACMode.AUTO: ErdAcOperationMode.AUTO,
+            hvac = HVACMode(value.lower())
+            mapped = {
                 HVACMode.COOL: ErdAcOperationMode.COOL,
                 HVACMode.HEAT: ErdAcOperationMode.HEAT,
                 HVACMode.FAN_ONLY: ErdAcOperationMode.FAN_ONLY,
                 HVACMode.DRY: ErdAcOperationMode.DRY
-            }.get(hvac)
+            }
+            if self._available_modes and self._available_modes.has_heat:
+                mapped[HVACMode.AUTO] = ErdAcOperationMode.AUTO
+            elif self._available_modes and self._available_modes.has_energy_saver:
+                mapped[HVACMode.AUTO] = ErdAcOperationMode.ENERGY_SAVER
+            return mapped.get(hvac)
         except ValueError:
             _LOGGER.warning(f"Could not set HVAC mode to {value.upper()}")
             return ErdAcOperationMode.COOL
